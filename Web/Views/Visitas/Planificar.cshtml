@@ -68,4 +68,16 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Evento GA: vista de la pantalla de planificación de visita
+            if (typeof gtag === 'function') {
+                gtag('event', 'ver_pantalla_planificar_visita', {
+                    'modulo': 'visitas',
+                    'pantalla': 'planificar'
+                });
+            }
+        });
+    </script>
 }

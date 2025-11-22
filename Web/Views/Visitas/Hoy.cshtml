@@ -270,6 +270,14 @@
           abrirDetalle('Detalle del técnico', this);
         });
       });
+
+      // Evento GA: consulta de visitas del día
+      if (typeof gtag === 'function') {
+        gtag('event', 'consultar_visitas_dia', {
+          'modulo': 'visitas',
+          'pantalla': 'hoy'
+        });
+      }
     });
   </script>
 }

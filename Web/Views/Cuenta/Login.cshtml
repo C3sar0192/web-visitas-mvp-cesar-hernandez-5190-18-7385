@@ -41,3 +41,17 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Evento GA: vista de la pantalla de inicio de sesión
+            if (typeof gtag === 'function') {
+                gtag('event', 'ver_pantalla_login', {
+                    'modulo': 'autenticacion',
+                    'pantalla': 'login'
+                });
+            }
+        });
+    </script>
+}

@@ -198,6 +198,14 @@
                     abrirModal('Detalle del técnico', this);
                 });
             });
+
+            // Evento GA: vista del tablero de visitas
+            if (typeof gtag === 'function') {
+                gtag('event', 'ver_tablero_visitas', {
+                    'modulo': 'visitas',
+                    'pantalla': 'tablero'
+                });
+            }
         });
     </script>
 }
