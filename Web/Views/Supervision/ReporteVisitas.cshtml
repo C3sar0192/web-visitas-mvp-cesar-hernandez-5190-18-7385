@@ -1,0 +1,217 @@
+@model List<Web.Models.VisitaReporte>
+@using Web.Models
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+@{
+    ViewData["Title"] = "Reporte de visitas por técnico";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Datos que ya manda el controlador
+    List<TecnicoResumen> tecnicos = ViewBag.Tecnicos as List<TecnicoResumen> ?? new List<TecnicoResumen>();
+    int? tecnicoIdSeleccionado = ViewBag.TecnicoId as int?;
+    string desdeStr = ViewBag.Desde as string ?? string.Empty;
+    string hastaStr = ViewBag.Hasta as string ?? string.Empty;
+
+    // Filtros adicionales (cliente y estado) vienen por querystring
+    string clienteFiltro = ViewContext.HttpContext.Request.Query["cliente"];
+    string estadoStr = ViewContext.HttpContext.Request.Query["estado"];
+
+    EstadoVisita? estadoFiltro = null;
+    if (!string.IsNullOrWhiteSpace(estadoStr) &&
+    Enum.TryParse<EstadoVisita>(estadoStr, out var tmpEstado))
+    {
+        estadoFiltro = tmpEstado;
+    }
+
+    // Trabajamos sobre una copia filtrada del modelo
+    List<VisitaReporte> datos = Model ?? new List<VisitaReporte>();
+
+    if (!string.IsNullOrWhiteSpace(clienteFiltro))
+    {
+        string texto = clienteFiltro.Trim().ToLowerInvariant();
+        datos = datos
+        .FindAll(v =>
+        !string.IsNullOrWhiteSpace(v.NombreCliente) &&
+        v.NombreCliente.ToLowerInvariant().Contains(texto));
+    }
+
+    if (estadoFiltro.HasValue)
+    {
+        datos = datos.FindAll(v => v.Estado == estadoFiltro.Value);
+    }
+}
+
+<h2>Reporte de visitas por técnico</h2>
+
+<form method="get" class="row g-3 mb-3">
+    <!-- Técnico -->
+    <div class="col-md-4">
+        <label class="form-label">Técnico</label>
+        <select name="tecnicoId" class="form-select">
+            <option value="">-- Seleccione --</option>
+            @foreach (TecnicoResumen t in tecnicos)
+            {
+                string sel = (tecnicoIdSeleccionado.HasValue && tecnicoIdSeleccionado.Value == t.Id)
+                ? "selected"
+                : null;
+
+                <option value="@t.Id" selected="@sel">
+                    @t.Nombre (@t.Correo)
+                </option>
+            }
+        </select>
+    </div>
+
+    <!-- Desde -->
+    <div class="col-md-2">
+        <label class="form-label">Desde</label>
+        <input type="date" name="desde" class="form-control" value="@desdeStr" />
+    </div>
+
+    <!-- Hasta -->
+    <div class="col-md-2">
+        <label class="form-label">Hasta</label>
+        <input type="date" name="hasta" class="form-control" value="@hastaStr" />
+    </div>
+
+    <!-- Cliente -->
+    <div class="col-md-2">
+        <label class="form-label">Cliente</label>
+        <input type="text" name="cliente" class="form-control" value="@clienteFiltro" placeholder="Nombre cliente" />
+    </div>
+
+    <!-- Estado -->
+    <div class="col-md-2">
+        <label class="form-label">Estado</label>
+        @{
+            string selProg = (estadoFiltro == EstadoVisita.Programada) ? "selected" : null;
+            string selEnCurso = (estadoFiltro == EstadoVisita.EnCurso) ? "selected" : null;
+            string selComp = (estadoFiltro == EstadoVisita.Completada) ? "selected" : null;
+            string selCanc = (estadoFiltro == EstadoVisita.Cancelada) ? "selected" : null;
+        }
+        <select name="estado" class="form-select">
+            <option value="">Todos</option>
+            <option value="@EstadoVisita.Programada" selected="@selProg">Programada</option>
+            <option value="@EstadoVisita.EnCurso" selected="@selEnCurso">En progreso</option>
+            <option value="@EstadoVisita.Completada" selected="@selComp">Completada</option>
+            <option value="@EstadoVisita.Cancelada" selected="@selCanc">Cancelada</option>
+        </select>
+    </div>
+
+    <div class="col-12 d-flex gap-2 justify-content-end">
+        <button type="submit" class="btn btn-primary">Buscar</button>
+
+        <button type="button" class="btn btn-success" id="btnExportExcel">
+            Exportar Excel
+        </button>
+
+        <button type="button" class="btn btn-secondary" id="btnExportPdf">
+            Exportar PDF
+        </button>
+    </div>
+</form>
+
+<table class="table table-striped" id="tablaReporte">
+    <thead>
+        <tr>
+            <th>Id Visita</th>
+            <th>Cliente</th>
+            <th>Técnico</th>
+            <th>Supervisor</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (VisitaReporte v in datos)
+        {
+            string textoEstado = v.Estado switch
+            {
+                EstadoVisita.Programada => "Programada",
+                EstadoVisita.EnCurso => "En progreso",
+                EstadoVisita.Completada => "Completada",
+                EstadoVisita.Cancelada => "Cancelada",
+                _ => v.Estado.ToString()
+            };
+
+            <tr>
+                <td>@v.IdVisita</td>
+                <td>@v.NombreCliente</td>
+                <td>@v.NombreTecnico</td>
+                <td>@v.NombreSupervisor</td>
+                <td>@v.FechaProgramada.ToString("yyyy-MM-dd")</td>
+                <td>@textoEstado</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        // -----------------------------
+        // Exportar tabla a CSV (Excel)
+        // -----------------------------
+        function exportTableToCSV(filename) {
+            var csv = [];
+            var rows = document.querySelectorAll("#tablaReporte tr");
+
+            rows.forEach(function (row) {
+                var cols = row.querySelectorAll("th, td");
+                var rowData = [];
+
+                cols.forEach(function (col) {
+                    var text = col.innerText.replace(/"/g, '""');
+                    rowData.push('"' + text + '"');
+                });
+
+                csv.push(rowData.join(","));
+            });
+
+            var blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // -----------------------------
+        // Exportar tabla a PDF (Imprimir → Guardar como PDF)
+        // -----------------------------
+        function exportTableToPdf() {
+            var tableHtml = document.getElementById("tablaReporte").outerHTML;
+
+            var win = window.open("", "_blank");
+            win.document.write("<html><head><title>Reporte de visitas</title>");
+            win.document.write("<style>");
+            win.document.write("table{border-collapse:collapse;width:100%;}");
+            win.document.write("th,td{border:1px solid #000;padding:4px;font-size:12px;}");
+            win.document.write("h3{text-align:center;font-family:sans-serif;}");
+            win.document.write("</style>");
+            win.document.write("</head><body>");
+            win.document.write("<h3>Reporte de visitas por técnico</h3>");
+            win.document.write(tableHtml);
+            win.document.write("</body></html>");
+            win.document.close();
+            win.focus();
+            win.print(); // aquí el usuario elige "Guardar como PDF"
+        }
+
+        document.getElementById("btnExportExcel")
+            .addEventListener("click", function () {
+                exportTableToCSV("reporte_visitas.csv");
+            });
+
+        document.getElementById("btnExportPdf")
+            .addEventListener("click", function () {
+                exportTableToPdf();
+            });
+    </script>
+}

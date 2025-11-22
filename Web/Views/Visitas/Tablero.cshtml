@@ -1,0 +1,203 @@
+@model List<Web.Models.Visita>
+@using Web.Models
+
+@{
+    ViewData["Title"] = "Tablero de Visitas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    List<UsuarioDto> tecnicos = ViewBag.Tecnicos as List<UsuarioDto> ?? new List<UsuarioDto>();
+    int? tecnicoIdSeleccionado = ViewBag.TecnicoId as int?;
+    EstadoVisita? estadoSeleccionado = ViewBag.Estado as EstadoVisita?;
+    string fechaInicioStr = ViewBag.FechaInicio as string ?? string.Empty;
+    string fechaFinStr = ViewBag.FechaFin as string ?? string.Empty;
+}
+
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+<h2>Tablero de Visitas</h2>
+
+<form method="get" class="row g-3 mb-3">
+    <!-- Técnico -->
+    <div class="col-md-3">
+        <label class="form-label">Técnico</label>
+        <select name="tecnicoId" class="form-select">
+            <option value="">-- Todos --</option>
+            @foreach (var t in tecnicos)
+            {
+                string selectedTec = (tecnicoIdSeleccionado.HasValue && tecnicoIdSeleccionado.Value == t.Id)
+                ? "selected"
+                : null;
+
+                <option value="@t.Id" selected="@selectedTec">@t.Nombre</option>
+            }
+        </select>
+    </div>
+
+    <!-- Estado -->
+    <div class="col-md-3">
+        <label class="form-label">Estado</label>
+        @{
+            string selProg = (estadoSeleccionado == EstadoVisita.Programada) ? "selected" : null;
+            string selEnCur = (estadoSeleccionado == EstadoVisita.EnCurso) ? "selected" : null;
+            string selComp = (estadoSeleccionado == EstadoVisita.Completada) ? "selected" : null;
+            string selCanc = (estadoSeleccionado == EstadoVisita.Cancelada) ? "selected" : null;
+        }
+        <select name="estado" class="form-select">
+            <option value="">Todos</option>
+            <option value="@EstadoVisita.Programada" selected="@selProg">Programada</option>
+            <option value="@EstadoVisita.EnCurso" selected="@selEnCur">En progreso</option>
+            <option value="@EstadoVisita.Completada" selected="@selComp">Completada</option>
+            <option value="@EstadoVisita.Cancelada" selected="@selCanc">Cancelada</option>
+        </select>
+    </div>
+
+    <!-- Fecha inicio -->
+    <div class="col-md-2">
+        <label class="form-label">Fecha inicio</label>
+        <input type="date" name="fechaInicio" class="form-control" value="@fechaInicioStr" />
+    </div>
+
+    <!-- Fecha fin -->
+    <div class="col-md-2">
+        <label class="form-label">Fecha fin</label>
+        <input type="date" name="fechaFin" class="form-control" value="@fechaFinStr" />
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    </div>
+</form>
+
+<div class="table table-striped">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Cliente</th>
+                <th>Técnico</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var v in Model)
+            {
+                string nombreCliente = string.IsNullOrWhiteSpace(v.NombreCliente)
+                ? $"Cliente #{v.Id}"
+                : v.NombreCliente;
+
+                string textoEstado = v.Estado switch
+                {
+                    EstadoVisita.Programada => "Programada",
+                    EstadoVisita.EnCurso => "En progreso",
+                    EstadoVisita.Completada => "Completada",
+                    EstadoVisita.Cancelada => "Cancelada",
+                    _ => v.Estado.ToString()
+                };
+
+                string obsPlan = v.NotasVisita ?? string.Empty;
+                string notaTec = v.NotasTecnico ?? string.Empty;
+
+                <tr>
+                    <td>@v.Id</td>
+                    <td>@nombreCliente</td>
+                    <td>@v.NombreTecnico</td>
+                    <td>@v.FechaProgramada.ToString("yyyy-MM-dd")</td>
+                    <td>@textoEstado</td>
+                    <td class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm btn-detalle-plan" data-id="@v.Id"
+                            data-cliente="@nombreCliente" data-fecha="@v.FechaProgramada.ToString("yyyy-MM-dd")"
+                            data-estado="@textoEstado" data-detalle="@obsPlan">
+                            Detalle visita
+                        </button>
+
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-detalle-tec" data-id="@v.Id"
+                            data-cliente="@nombreCliente" data-fecha="@v.FechaProgramada.ToString("yyyy-MM-dd")"
+                            data-estado="@textoEstado" data-detalle="@notaTec">
+                            Detalle técnico
+                        </button>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+</div>
+<style>
+    .text-pre-wrap {
+        white-space: pre-wrap;
+    }
+</style>
+
+<!-- Modal de detalle (solo lectura) -->
+<div class="modal fade" id="modalDetalle" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detalleTitulo">Detalle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Id:</strong> <span id="det-id"></span></p>
+                <p><strong>Cliente:</strong> <span id="det-cliente"></span></p>
+                <p><strong>Fecha:</strong> <span id="det-fecha"></span></p>
+                <p><strong>Estado:</strong> <span id="det-estado"></span></p>
+                <p><strong>Notas:</strong></p>
+                <p id="det-notas" class="text-pre-wrap"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modalEl = document.getElementById('modalDetalle');
+            var modal = new bootstrap.Modal(modalEl);
+
+            var titulo = document.getElementById('detalleTitulo');
+            var detId = document.getElementById('det-id');
+            var detCliente = document.getElementById('det-cliente');
+            var detFecha = document.getElementById('det-fecha');
+            var detEstado = document.getElementById('det-estado');
+            var detNotas = document.getElementById('det-notas');
+
+            function abrirModal(tituloTexto, boton) {
+                titulo.textContent = tituloTexto;
+                detId.textContent = boton.getAttribute('data-id') || '';
+                detCliente.textContent = boton.getAttribute('data-cliente') || '';
+                detFecha.textContent = boton.getAttribute('data-fecha') || '';
+                detEstado.textContent = boton.getAttribute('data-estado') || '';
+
+                var notas = boton.getAttribute('data-detalle');
+                detNotas.textContent = (notas && notas.trim())
+                    ? notas
+                    : 'Sin información registrada.';
+
+                modal.show();
+            }
+
+            document.querySelectorAll('.btn-detalle-plan').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    abrirModal('Detalle de la visita', this);
+                });
+            });
+
+            document.querySelectorAll('.btn-detalle-tec').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    abrirModal('Detalle del técnico', this);
+                });
+            });
+        });
+    </script>
+}

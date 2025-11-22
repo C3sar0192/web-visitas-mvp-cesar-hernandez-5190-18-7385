@@ -1,0 +1,43 @@
+@model Web.Models.PeticionLogin
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+<div class="row justify-content-center mt-5">
+    <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title mb-4 text-center">Iniciar sesión</h4>
+
+                @* Resumen de validación opcional *@
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                <form asp-action="Login" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Usuario</label>
+                        <input asp-for="Correo" class="form-control" autocomplete="username" />
+                        <span asp-validation-for="Correo" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input asp-for="Contrasena" type="password" class="form-control"
+                            autocomplete="current-password" />
+                        <span asp-validation-for="Contrasena" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary" type="submit">Entrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

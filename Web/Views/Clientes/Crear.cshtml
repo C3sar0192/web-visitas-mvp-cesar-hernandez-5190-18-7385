@@ -1,0 +1,39 @@
+@model Web.Models.Cliente
+@{
+    ViewData["Title"] = "Nuevo Cliente";
+}
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+<h2>Nuevo Cliente</h2>
+
+<form asp-action="Crear" method="post">
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input asp-for="Nombre" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input asp-for="Direccion" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Correo</label>
+        <input asp-for="CorreoContacto" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Teléfono</label>
+        <input asp-for="TelefonoContacto" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">URL mapa (Google Maps)</label>
+        <input asp-for="UrlMapa" class="form-control" placeholder="https://maps.app.goo.gl/..." />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Volver</a>
+</form>

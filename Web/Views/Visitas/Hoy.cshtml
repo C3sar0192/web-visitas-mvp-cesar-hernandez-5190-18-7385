@@ -1,0 +1,275 @@
+@model List<Web.Models.Visita>
+@using Web.Models
+
+@{
+  ViewData["Title"] = "Visitas de Hoy";
+  Layout = "~/Views/Shared/_Layout.cshtml";
+
+  int total = Model?.Count ?? 0;
+}
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+<style>
+  /* Para que las notas respeten saltos de línea */
+  .text-pre-wrap {
+    white-space: pre-wrap;
+  }
+</style>
+
+<h2>Visitas de Hoy</h2>
+<p><strong>Total de visitas asignadas:</strong> @total</p>
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Cliente</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (Visita v in Model)
+      {
+        string nombreCliente = string.IsNullOrWhiteSpace(v.NombreCliente)
+        ? $"Cliente #{v.Id}"
+        : v.NombreCliente;
+
+        string textoEstado = v.Estado switch
+        {
+          EstadoVisita.Programada => "Programada",
+          EstadoVisita.EnCurso => "En progreso",
+          EstadoVisita.Completada => "Completada",
+          EstadoVisita.Cancelada => "Cancelada",
+          _ => v.Estado.ToString()
+        };
+
+        bool puedeCheckIn = v.Estado == EstadoVisita.Programada;
+        bool puedeCheckOut = v.Estado == EstadoVisita.EnCurso;
+        bool puedeCancelar = v.Estado == EstadoVisita.Programada;
+
+        string? urlMapa = v.UrlMapaCliente;
+
+        string notasVisita = v.NotasVisita ?? string.Empty;
+        string notasTecnico = v.NotasTecnico ?? string.Empty;
+
+        <tr>
+          <td>@v.Id</td>
+          <td>@nombreCliente</td>
+          <td>@v.FechaProgramada.ToString("yyyy-MM-dd")</td>
+          <td>@textoEstado</td>
+          <td class="d-flex gap-1">
+            @* CheckIn *@
+            @if (puedeCheckIn)
+            {
+              <form method="post" asp-action="CheckIn" asp-controller="Visitas" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@v.Id" />
+                <button class="btn btn-primary btn-sm" type="submit">CheckIn</button>
+              </form>
+            }
+
+            @* CheckOut *@
+            @if (puedeCheckOut)
+            {
+              <button type="button" class="btn btn-success btn-sm btn-checkout" data-id="@v.Id"
+                data-cliente="@nombreCliente">
+                CheckOut
+              </button>
+            }
+
+            @* Cancelar *@
+            @if (puedeCancelar)
+            {
+              <button type="button" class="btn btn-danger btn-sm btn-cancelar" data-id="@v.Id"
+                data-cliente="@nombreCliente">
+                Cancelar
+              </button>
+            }
+
+            @* Detalle visita *@
+            <button type="button" class="btn btn-outline-secondary btn-sm btn-detalle-plan" data-id="@v.Id"
+              data-cliente="@nombreCliente" data-fecha="@v.FechaProgramada.ToString("yyyy-MM-dd")"
+              data-estado="@textoEstado" data-detalle="@notasVisita">
+              Detalle visita
+            </button>
+
+            @* Detalle técnico *@
+            <button type="button" class="btn btn-outline-primary btn-sm btn-detalle-tec" data-id="@v.Id"
+              data-cliente="@nombreCliente" data-fecha="@v.FechaProgramada.ToString("yyyy-MM-dd")"
+              data-estado="@textoEstado" data-detalle="@notasTecnico">
+              Detalle técnico
+            </button>
+
+            @* Ver mapa *@
+            @if (!string.IsNullOrWhiteSpace(urlMapa))
+            {
+              <a class="btn btn-secondary btn-sm" target="_blank" href="@urlMapa">Ver mapa</a>
+            }
+            else
+            {
+              <button class="btn btn-secondary btn-sm" disabled>Ver mapa</button>
+            }
+          </td>
+        </tr>
+      }
+
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal para notas de CheckOut / Cancelar -->
+<div class="modal fade" id="modalNotas" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formModal" method="post">
+        @Html.AntiForgeryToken()
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitulo">Detalle de visita</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="modalDescripcion"></p>
+          <input type="hidden" name="id" id="inputVisitaId" />
+          <div class="mb-3">
+            <label class="form-label" id="labelNotas"></label>
+            <textarea class="form-control" name="notas" id="inputNotas" rows="4" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="btnModalAceptar">Aceptar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal solo lectura para ver detalle -->
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detalleTitulo">Detalle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Id:</strong> <span id="det-id"></span></p>
+        <p><strong>Cliente:</strong> <span id="det-cliente"></span></p>
+        <p><strong>Fecha:</strong> <span id="det-fecha"></span></p>
+        <p><strong>Estado:</strong> <span id="det-estado"></span></p>
+        <p><strong>Notas:</strong></p>
+        <p id="det-notas" class="text-pre-wrap"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // -------------------------------------------------
+      // Modal de CheckOut / Cancelar (con notas)
+      // -------------------------------------------------
+      var modalEl = document.getElementById('modalNotas');
+      var modal = new bootstrap.Modal(modalEl);
+
+      var form = document.getElementById('formModal');
+      var titulo = document.getElementById('modalTitulo');
+      var descripcion = document.getElementById('modalDescripcion');
+      var labelNotas = document.getElementById('labelNotas');
+      var inputId = document.getElementById('inputVisitaId');
+      var inputNotas = document.getElementById('inputNotas');
+
+      // Botones de CheckOut
+      document.querySelectorAll('.btn-checkout').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = this.getAttribute('data-id');
+          var cliente = this.getAttribute('data-cliente');
+
+          form.action = '@Url.Action("CheckOut", "Visitas")';
+
+          titulo.textContent = 'Finalizar visita';
+          descripcion.textContent = 'Ingrese una descripción de los trabajos realizados para la visita del cliente ' + cliente + '.';
+          labelNotas.textContent = 'Descripción de trabajos realizados';
+
+          inputId.value = id;
+          inputNotas.value = '';
+
+          modal.show();
+        });
+      });
+
+      // Botones de Cancelar
+      document.querySelectorAll('.btn-cancelar').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = this.getAttribute('data-id');
+          var cliente = this.getAttribute('data-cliente');
+
+          form.action = '@Url.Action("Cancelar", "Visitas")';
+
+          titulo.textContent = 'Cancelar visita';
+          descripcion.textContent = 'Ingrese el motivo de la cancelación para la visita del cliente ' + cliente + '.';
+          labelNotas.textContent = 'Motivo de cancelación';
+
+          inputId.value = id;
+          inputNotas.value = '';
+
+          modal.show();
+        });
+      });
+
+      // -------------------------------------------------
+      // Modal de Detalle (solo lectura)
+      // -------------------------------------------------
+      var detalleModalEl = document.getElementById('detalleModal');
+      var detalleModal = new bootstrap.Modal(detalleModalEl);
+
+      var detTitulo = document.getElementById('detalleTitulo');
+      var detId = document.getElementById('det-id');
+      var detCliente = document.getElementById('det-cliente');
+      var detFecha = document.getElementById('det-fecha');
+      var detEstado = document.getElementById('det-estado');
+      var detNotas = document.getElementById('det-notas');
+
+      function abrirDetalle(titulo, btn) {
+        detTitulo.textContent = titulo;
+        detId.textContent = btn.getAttribute('data-id') || '';
+        detCliente.textContent = btn.getAttribute('data-cliente') || '';
+        detFecha.textContent = btn.getAttribute('data-fecha') || '';
+        detEstado.textContent = btn.getAttribute('data-estado') || '';
+
+        var notas = btn.getAttribute('data-detalle');
+        detNotas.textContent = (notas && notas.trim())
+          ? notas
+          : 'Sin información registrada.';
+
+        detalleModal.show();
+      }
+
+      // Detalle de la visita (planificación)
+      document.querySelectorAll('.btn-detalle-plan').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          abrirDetalle('Detalle de la visita', this);
+        });
+      });
+
+      // Detalle del técnico
+      document.querySelectorAll('.btn-detalle-tec').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          abrirDetalle('Detalle del técnico', this);
+        });
+      });
+    });
+  </script>
+}

@@ -1,0 +1,48 @@
+@model List<Web.Models.TecnicoResumen>
+
+@{
+    ViewData["Title"] = "Mis técnicos";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+<h2>Mis técnicos</h2>
+
+<p>
+    Aquí puede ver los técnicos que tiene a su cargo y la cantidad de visitas que tienen asignadas para hoy
+    y el total histórico de visitas que se les han asignado.
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Asignación hoy</th>
+            <th>Visitas hoy</th>
+            <th>Total visitas</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            string asignacionHoy = t.TieneAsignacionHoy ? "Sí" : "No";
+
+            <tr>
+                <td>@t.Id</td>
+                <td>@t.Nombre</td>
+                <td>@t.Correo</td>
+                <td>@asignacionHoy</td>
+                <td>@t.CantidadVisitasHoy</td>
+                <td>@t.CantidadVisitas</td>
+            </tr>
+        }
+    </tbody>
+</table>

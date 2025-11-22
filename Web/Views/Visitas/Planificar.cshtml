@@ -1,0 +1,71 @@
+@model Web.Models.CrearVisita
+@using Web.Models
+
+@{
+    ViewData["Title"] = "Planificar visita";
+    List<Cliente> clientes = ViewBag.Clientes as List<Cliente> ?? new List<Cliente>();
+    List<UsuarioDto> tecnicos = ViewBag.Tecnicos as List<UsuarioDto> ?? new List<UsuarioDto>();
+}
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+<h2 class="mb-3">Planificar visita</h2>
+
+<form asp-action="Planificar" method="post">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+
+        <div class="col-md-6">
+            <label asp-for="IdCliente" class="form-label">Cliente</label>
+            <select asp-for="IdCliente" class="form-select">
+                <option value="">-- Seleccione --</option>
+                @foreach (Cliente c in clientes)
+                {
+                    <option value="@c.Id">@c.Nombre</option>
+                }
+            </select>
+            <span class="text-danger" asp-validation-for="IdCliente"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="IdTecnico" class="form-label">Técnico</label>
+            <select asp-for="IdTecnico" class="form-select">
+                <option value="">-- Seleccione --</option>
+                @foreach (UsuarioDto t in tecnicos)
+                {
+                    <option value="@t.Id">@t.Nombre</option>
+                }
+            </select>
+            <span class="text-danger" asp-validation-for="IdTecnico"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label" for="FechaProgramada">Fecha programada</label>
+            <input asp-for="FechaProgramada" type="datetime-local" class="form-control" />
+            <div class="form-text">
+                Ejemplo: 2025-11-05T08:00 (hora local). Se convertirá a UTC.
+            </div>
+            <span class="text-danger" asp-validation-for="FechaProgramada"></span>
+        </div>
+
+        <div class="col-md-12">
+            <label asp-for="Notas" class="form-label">Notas</label>
+            <textarea asp-for="Notas" class="form-control" rows="3"></textarea>
+        </div>
+
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a asp-action="Tablero" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

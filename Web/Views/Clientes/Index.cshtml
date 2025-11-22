@@ -1,0 +1,116 @@
+@model List<Web.Models.Cliente>
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+<h2>Clientes</h2>
+
+<p>
+    <a class="btn btn-primary btn-sm" asp-controller="Clientes" asp-action="Crear">Nuevo Cliente</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th style="width: 260px;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>@c.Id</td>
+                <td>@c.Nombre</td>
+                <td>@c.Direccion</td>
+                <td>@c.CorreoContacto</td>
+                <td>@c.TelefonoContacto</td>
+                <td>
+
+                    <a class="btn btn-warning btn-sm" asp-controller="Clientes" asp-action="Editar" asp-route-id="@c.Id">
+                        Editar
+                    </a>
+
+                    <form id="form-eliminar-cliente-@c.Id" asp-controller="Clientes" asp-action="Eliminar"
+                        asp-route-id="@c.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-cliente"
+                            data-form-id="form-eliminar-cliente-@c.Id" data-nombre="@c.Nombre">
+                            Eliminar
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal de confirmación eliminación de cliente -->
+<div class="modal fade" id="confirmEliminarClienteModal" tabindex="-1" aria-labelledby="confirmEliminarClienteLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmEliminarClienteLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="textoConfirmEliminarCliente">
+                    ¿Seguro que desea eliminar este cliente?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmEliminarCliente">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var formIdAEliminar = null;
+            var modalEl = document.getElementById('confirmEliminarClienteModal');
+            if (!modalEl) return;
+
+            var modal = new bootstrap.Modal(modalEl);
+            var texto = document.getElementById('textoConfirmEliminarCliente');
+            var btnConfirm = document.getElementById('btnConfirmEliminarCliente');
+
+            document.querySelectorAll('.btn-eliminar-cliente').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    formIdAEliminar = this.getAttribute('data-form-id');
+                    var nombre = this.getAttribute('data-nombre');
+                    if (nombre) {
+                        texto.textContent = '¿Seguro que desea eliminar al cliente "' + nombre + '"?';
+                    } else {
+                        texto.textContent = '¿Seguro que desea eliminar este cliente?';
+                    }
+                    modal.show();
+                });
+            });
+
+            btnConfirm.addEventListener('click', function () {
+                if (formIdAEliminar) {
+                    var form = document.getElementById(formIdAEliminar);
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,121 @@
+@model List<Web.Models.UsuarioDto>
+@{
+    ViewData["Title"] = "Mantenimiento de Usuarios";
+}
+
+<!--
+//CESAR EDUARDO HERNANDEZ ALVARADO
+//CARNET 5190-18-7385
+//PROYECTO DE SEMINARIO DE PRIBADO "ANALIS Y DESARROOLLO DE SISTEMAS"
+//SEMINARIO DE PRIVADOS DE ANTIGUA GUAMTEMALA
+//PROYECTO DE VISITAS TECNICAS DE SKYNET S.A
+-->
+
+<h2>Mantenimiento de Usuarios</h2>
+
+<p>
+    Aquí puede ver los usuarios registrados (Administradores, Supervisores y Técnicos).
+    Más adelante se pueden agregar opciones de crear, editar y eliminar.
+</p>
+
+<p>
+    <a asp-controller="Mantenimiento" asp-action="CrearUsuario" class="btn btn-primary btn-sm">
+        Nuevo Usuario
+    </a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.Id</td>
+                <td>@u.Nombre</td>
+                <td>@u.Correo</td>
+                <td>@u.Rol</td>
+                <td>
+                    <a asp-controller="Mantenimiento" asp-action="EditarUsuario" asp-route-id="@u.Id"
+                        class="btn btn-warning btn-sm">
+                        Editar
+                    </a>
+
+                    <form id="form-eliminar-usuario-@u.Id" asp-controller="Mantenimiento" asp-action="EliminarUsuario"
+                        asp-route-id="@u.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-usuario"
+                            data-form-id="form-eliminar-usuario-@u.Id" data-nombre="@u.Nombre">
+                            Eliminar
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal de confirmación eliminación de usuario -->
+<div class="modal fade" id="confirmEliminarUsuarioModal" tabindex="-1" aria-labelledby="confirmEliminarUsuarioLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmEliminarUsuarioLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="textoConfirmEliminarUsuario">
+                    ¿Seguro que desea eliminar este usuario?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmEliminarUsuario">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var formIdAEliminar = null;
+            var modalEl = document.getElementById('confirmEliminarUsuarioModal');
+            if (!modalEl) return;
+
+            var modal = new bootstrap.Modal(modalEl);
+            var texto = document.getElementById('textoConfirmEliminarUsuario');
+            var btnConfirm = document.getElementById('btnConfirmEliminarUsuario');
+
+            document.querySelectorAll('.btn-eliminar-usuario').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    formIdAEliminar = this.getAttribute('data-form-id');
+                    var nombre = this.getAttribute('data-nombre');
+                    if (nombre) {
+                        texto.textContent = '¿Seguro que desea eliminar al usuario "' + nombre + '"?';
+                    } else {
+                        texto.textContent = '¿Seguro que desea eliminar este usuario?';
+                    }
+                    modal.show();
+                });
+            });
+
+            btnConfirm.addEventListener('click', function () {
+                if (formIdAEliminar) {
+                    var form = document.getElementById(formIdAEliminar);
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            });
+        })();
+    </script>
+}

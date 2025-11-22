@@ -1,0 +1,161 @@
+﻿@using System.Security.Claims
+
+@{
+    bool usuarioAutenticado = User.Identity != null && User.Identity.IsAuthenticated;
+    string rol = string.Empty;
+
+    if (usuarioAutenticado)
+    {
+        rol = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    }
+}
+
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MVP (Visitas)</title>
+
+    <!-- Bootstrap 5 (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background-image: url("/img/v915-wit-001.jpg");
+            /* ruta de tu imagen */
+            background-repeat: no-repeat;
+            background-size: cover;
+            /* la imagen cubre toda la pantalla */
+            background-position: center;
+            /* centrada */
+            background-attachment: fixed;
+            /* efecto tipo “fondo fijo” */
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+        }
+
+        main {
+            padding-top: 24px;
+            padding-bottom: 80px;
+            /* espacio para que el contenido no tape el footer */
+        }
+
+        table td,
+        table th {
+            vertical-align: middle;
+        }
+
+        /* Barra inferior fija */
+        .footer-bar {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #212529;
+            /* gris oscuro tipo navbar */
+            color: #ffffff;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1030;
+        }
+    </style>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <!-- Logo: si está logueado va al Tablero, si no, al Login -->
+            @if (usuarioAutenticado)
+            {
+                <a class="navbar-brand" asp-controller="Visitas" asp-action="Tablero">MVP CESAR HERNANDEZ</a>
+            }
+            else
+            {
+                <a class="navbar-brand" asp-controller="Cuenta" asp-action="Login">MVP CESAR HERNANDEZ</a>
+            }
+
+            @if (usuarioAutenticado)
+            {
+                <div class="d-flex gap-2">
+
+                    @* Sección Mantenimiento (solo Administrador) *@
+                    @if (rol == "Administrador")
+                    {
+                        <a asp-controller="Mantenimiento" asp-action="Usuarios" class="btn btn-outline-light btn-sm">
+                            Mantenimiento
+                        </a>
+                    }
+
+                    @* Opciones comunes de Admin y Supervisor *@
+                    @if (rol == "Administrador" || rol == "Supervisor")
+                    {
+                        <a asp-controller="Clientes" asp-action="Index" class="btn btn-outline-light btn-sm">
+                            Clientes
+                        </a>
+
+                        <a asp-controller="Visitas" asp-action="Planificar" class="btn btn-outline-light btn-sm">
+                            Planificar visita
+                        </a>
+
+                        <a asp-controller="Visitas" asp-action="Tablero" class="btn btn-outline-light btn-sm">
+                            Tablero
+                        </a>
+                    }
+
+                    @* Opciones especiales para Supervisor *@
+                    @if (rol == "Supervisor")
+                    {
+                        <a asp-controller="Supervision" asp-action="MisTecnicos" class="btn btn-outline-light btn-sm">
+                            Mis técnicos
+                        </a>
+
+                        <a asp-controller="Supervision" asp-action="ReporteVisitas" class="btn btn-outline-light btn-sm">
+                            Reporte visitas
+                        </a>
+                    }
+
+                    @* Opciones para Técnico *@
+                    @if (rol == "Tecnico")
+                    {
+                        <a asp-controller="Visitas" asp-action="Hoy" class="btn btn-outline-light btn-sm">
+                            Visitas Hoy
+                        </a>
+                    }
+
+                    @* Logout por POST *@
+                    <form asp-controller="Cuenta" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-light btn-sm">
+                            Salir
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </nav>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+    <footer class="footer-bar">
+        MVP CESAR HERNANDEZ · Sistema de visitas · @DateTime.Now.Year
+    </footer>
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+
+</html>
